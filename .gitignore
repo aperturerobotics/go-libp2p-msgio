@@ -1,0 +1,11 @@
+*.swp
+.idea
+*.qlog
+*.sqlog
+*.qlog.zst
+*.sqlog.zst
+.tools/
+.aider*
+vendor/
+node_modules
+yarn.lock

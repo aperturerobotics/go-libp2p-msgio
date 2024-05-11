@@ -39,8 +39,7 @@ import (
 	"os"
 	"runtime/debug"
 
-	"google.golang.org/protobuf/proto"
-
+	protobuf_go_lite "github.com/aperturerobotics/protobuf-go-lite"
 	"github.com/multiformats/go-varint"
 )
 
@@ -59,7 +58,7 @@ func NewDelimitedReader(r io.Reader, maxSize int) ReadCloser {
 	return &uvarintReader{bufio.NewReader(r), nil, maxSize, closer}
 }
 
-func (ur *uvarintReader) ReadMsg(msg proto.Message) (err error) {
+func (ur *uvarintReader) ReadMsg(msg protobuf_go_lite.Message) (err error) {
 	defer func() {
 		if rerr := recover(); rerr != nil {
 			fmt.Fprintf(os.Stderr, "caught panic: %s\n%s\n", rerr, debug.Stack())
@@ -82,7 +81,7 @@ func (ur *uvarintReader) ReadMsg(msg proto.Message) (err error) {
 	if _, err := io.ReadFull(ur.r, buf); err != nil {
 		return err
 	}
-	return proto.Unmarshal(buf, msg)
+	return msg.UnmarshalVT(buf)
 }
 
 func (ur *uvarintReader) Close() error {

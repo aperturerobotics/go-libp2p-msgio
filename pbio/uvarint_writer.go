@@ -38,8 +38,7 @@ import (
 	"os"
 	"runtime/debug"
 
-	"google.golang.org/protobuf/proto"
-
+	protobuf_go_lite "github.com/aperturerobotics/protobuf-go-lite"
 	"github.com/multiformats/go-varint"
 )
 
@@ -53,45 +52,27 @@ func NewDelimitedWriter(w io.Writer) WriteCloser {
 	return &uvarintWriter{w, make([]byte, varint.MaxLenUvarint63), nil}
 }
 
-func (uw *uvarintWriter) WriteMsg(msg proto.Message) (err error) {
+func (uw *uvarintWriter) WriteMsg(msg protobuf_go_lite.Message) (err error) {
 	defer func() {
 		if rerr := recover(); rerr != nil {
 			fmt.Fprintf(os.Stderr, "caught panic: %s\n%s\n", rerr, debug.Stack())
-			err = fmt.Errorf("panic reading message: %s", rerr)
+			err = fmt.Errorf("panic writing message: %s", rerr)
 		}
 	}()
 
-	var data []byte
-	if m, ok := msg.(interface {
-		MarshalTo(data []byte) (n int, err error)
-	}); ok {
-		n, ok := getSize(m)
-		if ok {
-			if n+varint.MaxLenUvarint63 >= len(uw.buffer) {
-				uw.buffer = make([]byte, n+varint.MaxLenUvarint63)
-			}
-			lenOff := varint.PutUvarint(uw.buffer, uint64(n))
-			_, err = m.MarshalTo(uw.buffer[lenOff:])
-			if err != nil {
-				return err
-			}
-			_, err = uw.w.Write(uw.buffer[:lenOff+n])
-			return err
-		}
+	n := msg.SizeVT()
+	lenOff := varint.UvarintSize(uint64(n))
+	if n+lenOff > cap(uw.buffer) {
+		uw.buffer = make([]byte, n+lenOff)
+	} else {
+		uw.buffer = uw.buffer[:n+lenOff]
 	}
-
-	// fallback
-	data, err = proto.Marshal(msg)
+	_ = varint.PutUvarint(uw.buffer, uint64(n))
+	n, err = msg.MarshalToSizedBufferVT(uw.buffer[lenOff:])
 	if err != nil {
 		return err
 	}
-	length := uint64(len(data))
-	n := varint.PutUvarint(uw.lenBuf, length)
-	_, err = uw.w.Write(uw.lenBuf[:n])
-	if err != nil {
-		return err
-	}
-	_, err = uw.w.Write(data)
+	_, err = uw.w.Write(uw.buffer[:lenOff+n])
 	return err
 }
 

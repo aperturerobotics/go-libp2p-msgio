@@ -4,11 +4,11 @@ package pbio
 import (
 	"io"
 
-	"google.golang.org/protobuf/proto"
+	protobuf_go_lite "github.com/aperturerobotics/protobuf-go-lite"
 )
 
 type Writer interface {
-	WriteMsg(proto.Message) error
+	WriteMsg(protobuf_go_lite.Message) error
 }
 
 type WriteCloser interface {
@@ -17,24 +17,10 @@ type WriteCloser interface {
 }
 
 type Reader interface {
-	ReadMsg(msg proto.Message) error
+	ReadMsg(msg protobuf_go_lite.Message) error
 }
 
 type ReadCloser interface {
 	Reader
 	io.Closer
-}
-
-func getSize(v interface{}) (int, bool) {
-	if sz, ok := v.(interface {
-		Size() (n int)
-	}); ok {
-		return sz.Size(), true
-	} else if sz, ok := v.(interface {
-		ProtoSize() (n int)
-	}); ok {
-		return sz.ProtoSize(), true
-	} else {
-		return 0, false
-	}
 }

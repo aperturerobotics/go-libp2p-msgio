@@ -41,11 +41,9 @@ import (
 	"testing"
 
 	"github.com/libp2p/go-msgio/pbio"
-	"github.com/libp2p/go-msgio/pbio/pb"
+	pb "github.com/libp2p/go-msgio/pbio/pb"
 	"github.com/multiformats/go-varint"
 )
-
-//go:generate protoc --go_out=. --go_opt=Mpb/test.proto=./pb pb/test.proto
 
 func TestVarintNormal(t *testing.T) {
 	buf := newBuffer()
